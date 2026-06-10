@@ -32,6 +32,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       <div className="flex gap-3">
         <textarea
           ref={textareaRef}
+          aria-label="Chat message"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}

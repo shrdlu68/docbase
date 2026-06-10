@@ -22,10 +22,7 @@ export function DocumentEditor({ document }: DocumentEditorProps) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const tags = tagsInput
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
+      const tags = tagsInput.split(',').flatMap((t) => { const v = t.trim(); return v ? [v] : []; });
 
       if (isEditing) {
         return documentsApi.update(document.id, { title, content, tags });

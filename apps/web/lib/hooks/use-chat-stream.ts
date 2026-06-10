@@ -148,7 +148,7 @@ export function useChatStream(initialConversationId?: string) {
     } finally {
       setIsStreaming(false);
     }
-  }, [isStreaming, messages.length]);
+  }, [isStreaming]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();

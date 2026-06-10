@@ -32,6 +32,7 @@ export function ConversationList({ activeId, onSelect, onNew }: Props) {
             {conversations.map((c) => (
               <li key={c.id}>
                 <button
+                  type="button"
                   onClick={() => onSelect(c.id)}
                   className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 ${
                     activeId === c.id ? 'bg-blue-50 font-medium text-blue-700' : 'text-gray-700'

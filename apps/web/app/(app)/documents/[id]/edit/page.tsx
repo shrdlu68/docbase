@@ -3,8 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { DocumentEditor } from '@/components/features/documents/document-editor';
 
 export default async function EditDocumentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await createClient();
+  const [{ id }, supabase] = await Promise.all([params, createClient()]);
   const { data: doc, error } = await supabase
     .from('documents')
     .select('*')

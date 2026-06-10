@@ -20,7 +20,6 @@
     "@tanstack/react-query-devtools": "^5.28.0",
     "eventsource-parser": "^2.0.0",
     "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.0",
     "@docbase/types": "*"
   },
   "devDependencies": {

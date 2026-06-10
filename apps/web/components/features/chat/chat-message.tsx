@@ -37,8 +37,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
         {!isUser && hasCitations && (
           <div>
             <button
+              type="button"
               onClick={() => setShowCitations(!showCitations)}
               className="text-xs text-gray-500 hover:text-gray-700"
+              aria-label={showCitations ? 'Hide sources' : 'Show sources'}
             >
               {showCitations ? '▼' : '▶'} {message.citations!.length} source
               {message.citations!.length !== 1 ? 's' : ''}
