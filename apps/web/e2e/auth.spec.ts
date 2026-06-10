@@ -24,8 +24,8 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    // Either redirected to documents (auto-confirm on) or shows confirmation message
-    await expect(page).toHaveURL(/\/documents|\/auth\/login/, { timeout: 10000 });
+    // email confirmations are disabled in supabase config, so always redirects to documents
+    await expect(page).toHaveURL(/\/documents/, { timeout: 10000 });
   });
 
   test('can login with existing credentials', async ({ page }) => {
