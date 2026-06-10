@@ -14,7 +14,8 @@ dev:
 # Run all tests (unit + integration + E2E)
 test:
 	npx supabase db reset || true
-	npx turbo run test
+	set -a && . ./.env && set +a && npx turbo run test
+	cd apps/api && set -a && . ../../.env && set +a && npx jest --config test/jest-e2e.json --forceExit
 	cd apps/web && npx playwright test
 
 # Build all apps
