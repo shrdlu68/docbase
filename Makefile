@@ -1,8 +1,5 @@
 .PHONY: setup dev test build clean use-ollama use-openai
 
-# Local Supabase postgres for direct SQL execution
-DB_EXEC=PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -q
-
 # Install dependencies and initialize the local database
 setup:
 	npm install
@@ -37,38 +34,35 @@ clean:
 
 # ── Provider switching ────────────────────────────────────────────────────────
 #
-# Switches the AI backend between Ollama (local) and OpenAI (cloud).
-# Both targets:
-#   1. Patch the AI_* variables in .env
-#   2. Apply the matching pgvector dimension migration (wipes chunk embeddings)
+# The embedding column is declared as `vector` (no fixed dimension), so no DB
+# migration is needed when switching providers. Only the env vars change.
 #
-# After switching, restart the API and re-index your documents:
+# After switching, restart the API and re-index your documents — embeddings from
+# different models are semantically incompatible and must be regenerated:
 #   - make dev          (restarts API in dev mode)
 #   - In the UI: open each document and save to trigger re-indexing
 #
 # Ollama setup (Docker):
 #   docker compose --profile ollama up -d ollama
-#   docker compose --profile ollama up ollama-pull   # pulls models (~5 min first time)
+#   docker compose --profile ollama run --rm ollama-pull   # pulls models (~5 min, first time only)
 #   # Then run: make use-ollama
-#   # For Docker Compose use AI_BASE_URL=http://ollama:11434/v1 in .env instead
+#   # When using Docker Compose set AI_BASE_URL=http://ollama:11434/v1 in .env
 
 use-ollama:
 	@echo "→ Saving current API key to .openai_key.bak ..."
 	@grep '^AI_API_KEY=' .env | cut -d= -f2- > .openai_key.bak
-	@echo "→ Patching .env for Ollama (llama3.2 / nomic-embed-text / 768-dim) ..."
+	@echo "→ Patching .env for Ollama (llama3.2 / nomic-embed-text) ..."
 	@sed -i "s|^AI_BASE_URL=.*|AI_BASE_URL=http://localhost:11434/v1|" .env
 	@sed -i "s|^AI_API_KEY=.*|AI_API_KEY=ollama|" .env
 	@sed -i "s|^AI_MODEL=.*|AI_MODEL=llama3.2|" .env
 	@sed -i "s|^EMBEDDING_MODEL=.*|EMBEDDING_MODEL=nomic-embed-text|" .env
-	@echo "→ Applying 768-dim embedding schema migration ..."
-	@$(DB_EXEC) -f supabase/scripts/use_ollama.sql
 	@echo ""
-	@echo "✓ Switched to Ollama."
+	@echo "✓ Switched to Ollama. No DB migration needed (dimensionless vector column)."
 	@echo "  Next: kill the API process, run 'make dev', then re-index your documents."
 	@echo ""
 
 use-openai:
-	@echo "→ Patching .env for OpenAI (gpt-4o-mini / text-embedding-ada-002 / 1536-dim) ..."
+	@echo "→ Patching .env for OpenAI (gpt-4o-mini / text-embedding-ada-002) ..."
 	@sed -i "s|^AI_BASE_URL=.*|AI_BASE_URL=https://api.openai.com/v1|" .env
 	@if [ -f .openai_key.bak ]; then \
 	  SAVED=$$(cat .openai_key.bak); \
@@ -79,9 +73,7 @@ use-openai:
 	fi
 	@sed -i "s|^AI_MODEL=.*|AI_MODEL=gpt-4o-mini|" .env
 	@sed -i "s|^EMBEDDING_MODEL=.*|EMBEDDING_MODEL=text-embedding-ada-002|" .env
-	@echo "→ Applying 1536-dim embedding schema migration ..."
-	@$(DB_EXEC) -f supabase/scripts/use_openai.sql
 	@echo ""
-	@echo "✓ Switched to OpenAI."
+	@echo "✓ Switched to OpenAI. No DB migration needed (dimensionless vector column)."
 	@echo "  Next: kill the API process, run 'make dev', then re-index your documents."
 	@echo ""
