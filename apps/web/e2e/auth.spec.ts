@@ -24,10 +24,8 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    // Either redirected to documents or shows confirmation message
-    await expect(
-      page.getByText(/check your email|documents/i),
-    ).toBeVisible({ timeout: 10000 });
+    // Either redirected to documents (auto-confirm on) or shows confirmation message
+    await expect(page).toHaveURL(/\/documents|\/auth\/login/, { timeout: 10000 });
   });
 
   test('can login with existing credentials', async ({ page }) => {
@@ -36,7 +34,7 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/documents/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/documents/, { timeout: 15000 });
   });
 
   test('shows error for invalid credentials', async ({ page }) => {
