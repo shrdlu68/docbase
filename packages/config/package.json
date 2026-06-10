@@ -1,0 +1,11 @@
+{
+  "name": "@docbase/config",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./tsconfig/base": "./tsconfig.base.json",
+    "./tsconfig/nestjs": "./tsconfig.nestjs.json",
+    "./tsconfig/nextjs": "./tsconfig.nextjs.json",
+    "./eslint": "./eslint-base.js"
+  }
+}
