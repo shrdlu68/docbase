@@ -256,33 +256,35 @@ already established.
 
 ---
 
-## 13. Supabase Local Now Issues ES256 JWTs (Not HS256)
+## 13. Supabase Local Issues ES256 JWTs — Solved by Delegating Verification
 
 **Problem**: Supabase local v2.189+ signs access tokens with **ES256** (ECDSA P-256),
-not HS256. The NestJS `JwtStrategy` was configured with `secretOrKey: SUPABASE_JWT_SECRET`
-(the symmetric HS256 secret), which rejects all ES256 tokens with a 401.
+not HS256. Local JWT verification via `passport-jwt` requires knowing which algorithm
+Supabase uses and configuring the right key — creating environment-specific friction.
 
-**Fix**: Obtain the EC public key from the JWKS endpoint and configure the strategy to
-use it when present:
-```bash
-curl http://127.0.0.1:54321/auth/v1/.well-known/jwks.json
-# Convert x/y coords to PEM via node crypto.createPublicKey({ key: jwk, format: 'jwk' })
-```
+**Initial workaround**: dual-algorithm strategy (`secretOrKey: publicKey ?? secret`,
+`algorithms: publicKey ? ['ES256'] : ['HS256']`) requiring `SUPABASE_JWT_PUBLIC_KEY` in `.env`.
+
+**Final fix**: Replace local JWT verification entirely with `supabase.auth.getUser(token)`.
+Supabase verifies the token against its own auth service and returns the user object —
+no key configuration, no algorithm selection, works with any Supabase version:
+
 ```typescript
-// jwt.strategy.ts
-const publicKey = configService.get<string>('SUPABASE_JWT_PUBLIC_KEY');
-super({
-  secretOrKey: publicKey ? Buffer.from(publicKey.replace(/\\n/g, '\n')) : secret,
-  algorithms: publicKey ? ['ES256'] : ['HS256'],
-});
+// apps/api/src/auth/jwt-auth.guard.ts
+async canActivate(context: ExecutionContext): Promise<boolean> {
+  const token = authHeader.slice(7);
+  const { data: { user }, error } = await this.supabase.getAdminClient().auth.getUser(token);
+  if (error || !user) throw new UnauthorizedException();
+  request.user = { userId: user.id, email: user.email ?? '', jwt: token };
+  return true;
+}
 ```
 
-Add `SUPABASE_JWT_PUBLIC_KEY` to `.env` (optional; falls back to HS256 for older Supabase):
-```bash
-SUPABASE_JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"
-```
+**Trade-off**: one extra network hop per authenticated request (to Supabase auth service).
+Acceptable here because Supabase is local and is already hit for every DB query anyway.
+The simplified configuration and correct handling of token revocation outweigh the cost.
 
-**Where**: `apps/api/src/auth/jwt.strategy.ts`, `.env`
+**Where**: `apps/api/src/auth/jwt-auth.guard.ts`
 
 ---
 
@@ -436,7 +438,52 @@ Instructions tell the model to use the index for meta-questions and chunks for c
 
 ---
 
-## 21. Test Results (Final)
+## 21. Turborepo `globalEnv` Strips Unlisted Vars from Child Processes
+
+**Problem**: Turborepo 2.x defaults to strict env mode — only variables listed in
+`globalEnv` (or task-level `env`) are forwarded to child processes. A variable present
+in the shell environment but absent from `globalEnv` is silently stripped before the
+child process starts.
+
+This caused `SUPABASE_JWT_PUBLIC_KEY` to be unavailable to the NestJS process even when
+correctly set in `.env`, making the JWT strategy fall back to HS256 and reject all ES256
+tokens with 401. One-line fix: add the variable to `turbo.json`'s `globalEnv`.
+
+**Also**: `npx turbo run dev` does not auto-load `.env`. The Makefile `dev` target now
+sources it first so all vars are exported before Turbo runs:
+
+```makefile
+dev:
+    set -a && . ./.env && set +a && npx turbo run dev
+```
+
+**Where**: `turbo.json`, `Makefile`
+
+---
+
+## 22. `signUp()` Returns a Session When Email Confirmation Is Disabled
+
+**Problem**: When `GOTRUE_MAILER_AUTOCONFIRM=true` (local dev default), `signUp()` creates
+the account AND returns a live session in `data.session`. The original registration handler
+ignored this session and always showed "Check your email", leaving users unable to proceed
+without a manual login step.
+
+**Fix**: Check for the session and redirect immediately if present:
+```typescript
+const { data, error } = await supabase.auth.signUp({ email, password });
+if (error) throw error;
+if (data.session) {
+  window.location.assign('/documents'); // auto-confirmed — session is live
+} else {
+  setMessage('Check your email to confirm your account.');
+}
+```
+
+**Where**: `apps/web/components/features/auth/auth-form.tsx`
+
+---
+
+## 23. Test Results (Final)
 
 All unit tests pass:
 
@@ -449,15 +496,21 @@ Test Suites: 3 passed
 Tests:       21 passed
 ```
 
-All 13 Playwright E2E tests also pass (with Supabase local + valid AI credentials):
+All integration tests pass (requires `supabase start` + valid AI credentials):
 
 ```
-13 passed (32.4s)
-  ✓ auth.spec.ts (5 tests)
-  ✓ chat.spec.ts (3 tests)
-  ✓ documents.spec.ts (4 tests)
+PASS  test/documents.integration.spec.ts  (8 tests — CRUD + RLS isolation)
+PASS  test/rag.integration.spec.ts        (1 test  — chunk indexing)
+```
+
+Run with: `cd apps/api && jest --config test/jest-e2e.json --forceExit`
+
+All 14 Playwright E2E tests pass:
+
+```
+14 passed (34s)
+  ✓ auth.spec.ts         (5 tests)
+  ✓ chat.spec.ts         (4 tests — includes factual + meta-question)
+  ✓ documents.spec.ts    (4 tests)
   ✓ rls-isolation.spec.ts (1 test)
 ```
-
-Integration tests (`test/*.integration.spec.ts`) require a running Supabase instance and valid
-AI credentials. See `ARCH.md` for the test strategy and `docs/GUIDE.md` for how to run them.
