@@ -68,7 +68,8 @@ test.describe('Chat', () => {
     await expect(page).toHaveURL(/\/chat/);
   });
 
-  test('lists known documents when asked', { timeout: 120000 }, async ({ page }) => {
+  test('lists known documents when asked', async ({ page }) => {
+    test.setTimeout(120000);
     await page.goto('/chat');
 
     const textarea = page.getByPlaceholder(/ask a question/i);
@@ -82,7 +83,8 @@ test.describe('Chat', () => {
     await expect(page.getByRole('button', { name: 'Send' })).toBeEnabled({ timeout: 10000 });
   });
 
-  test('answers factual questions from document content', { timeout: 120000 }, async ({ page }) => {
+  test('answers factual questions from document content', async ({ page }) => {
+    test.setTimeout(120000);
     await page.goto('/chat');
 
     const textarea = page.getByPlaceholder(/ask a question/i);

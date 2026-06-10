@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { createParser, type ParsedEvent, type ReconnectInterval } from 'eventsource-parser';
-import { apiStream } from '@/lib/api/client';
-import type { Citation, ChatStreamRequest } from '@docbase/types';
+import { apiStream, apiGet } from '@/lib/api/client';
+import type { Citation, ChatStreamRequest, Message } from '@docbase/types';
 
 export interface StreamingMessage {
   role: 'user' | 'assistant';
@@ -12,12 +12,25 @@ export interface StreamingMessage {
   isStreaming?: boolean;
 }
 
-export function useChatStream() {
+export function useChatStream(initialConversationId?: string) {
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const conversationIdRef = useRef<string | undefined>(undefined);
+  const conversationIdRef = useRef<string | undefined>(initialConversationId);
+
+  // Load history when an existing conversation is selected
+  useEffect(() => {
+    if (!initialConversationId) return;
+    conversationIdRef.current = initialConversationId;
+    apiGet<Message[]>(`/chat/conversations/${initialConversationId}/messages`)
+      .then((history) => {
+        setMessages(
+          history.map((m) => ({ role: m.role, content: m.content, citations: [] })),
+        );
+      })
+      .catch(() => setError('Failed to load conversation history'));
+  }, [initialConversationId]);
 
   const sendMessage = useCallback(async (question: string) => {
     if (isStreaming) return;
@@ -29,7 +42,6 @@ export function useChatStream() {
     setMessages((prev) => [...prev, { role: 'user', content: question }]);
 
     // Add placeholder for streaming assistant message
-    const assistantIndex = messages.length + 1;
     setMessages((prev) => [
       ...prev,
       { role: 'assistant', content: '', citations: [], isStreaming: true },

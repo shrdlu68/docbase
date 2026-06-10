@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RagService } from '../rag/rag.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -7,6 +7,8 @@ import { Document } from '@docbase/types';
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+
   constructor(
     private supabaseService: SupabaseService,
     private ragService: RagService,
@@ -49,7 +51,7 @@ export class DocumentsService {
 
     // Trigger async indexing — do not await
     this.ragService.indexDocument(doc.id, doc.content, userId, jwt).catch((err) => {
-      console.error(`Failed to index document ${doc.id}:`, err);
+      this.logger.error(`Failed to index document ${doc.id}:`, err);
     });
 
     return doc;
@@ -76,7 +78,7 @@ export class DocumentsService {
     // Re-index if content changed
     if (dto.content) {
       this.ragService.indexDocument(doc.id, doc.content, userId, jwt).catch((err) => {
-        console.error(`Failed to re-index document ${doc.id}:`, err);
+        this.logger.error(`Failed to re-index document ${doc.id}:`, err);
       });
     }
 
