@@ -8,8 +8,8 @@ A full-stack RAG (Retrieval-Augmented Generation) application. Users store docum
 
 | | Link |
 |---|---|
-| **App demo** (features, chat, citations) | _[Loom link — record and paste here]_ |
-| **AI-assisted development workflow** | _[Loom link — record and paste here]_ |
+| **App demo** (features, chat, citations) | _[Loom link — https://www.loom.com/share/056d08df6f8341719bcdeecf1c8d6d00]_ |
+| **AI-assisted development workflow** | _[Loom link — https://www.loom.com/share/002a9dda584241fc8ae4c08a1cc01abb]_ |
 
 ---
 
