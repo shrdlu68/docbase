@@ -44,3 +44,6 @@ supabase/.temp/
 
 # Non-repo files
 *.pdf
+
+# Provider-switching key backup (created by make use-ollama)
+.openai_key.bak
