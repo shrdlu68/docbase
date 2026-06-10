@@ -5,6 +5,27 @@ and scope, and as a reference for understanding why the codebase is shaped the w
 
 ---
 
+## Skills
+
+Before writing any code, install and apply the project's agent skills from [skills.sh](https://www.skills.sh/).
+Skills are installed locally under `.agents/skills/` and symlinked into `.claude/skills/` for Claude Code.
+
+```bash
+npx skills add https://github.com/anthropics/skills --skill frontend-design
+npx skills add https://github.com/millionco/react-doctor --skill react-doctor
+npx skills add https://github.com/supabase/agent-skills --skill supabase-postgres-best-practices
+```
+
+### When to apply each skill
+
+| Skill | When |
+|---|---|
+| `react-doctor` | After completing any React feature or bug fix — run `npx react-doctor@latest --verbose` and resolve errors before committing |
+| `supabase-postgres-best-practices` | When writing or reviewing migrations — check indexes, RLS policies, and query patterns |
+| `frontend-design` | When building or redesigning UI — commit to a distinctive aesthetic direction before writing components |
+
+---
+
 ## Goal
 
 Build a full-stack AI knowledge base from scratch. Users create and manage documents, then ask
