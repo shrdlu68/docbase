@@ -6,13 +6,17 @@ import { apiStream, apiGet } from '@/lib/api/client';
 import type { Citation, ChatStreamRequest, Message } from '@docbase/types';
 
 export interface StreamingMessage {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
   citations?: Citation[];
   isStreaming?: boolean;
 }
 
-export function useChatStream(initialConversationId?: string) {
+let _msgId = 0;
+function nextMsgId() { return `msg-${++_msgId}`; }
+
+export function useChatStream(initialConversationId?: string, onNewConversation?: () => void) {
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +30,7 @@ export function useChatStream(initialConversationId?: string) {
     apiGet<Message[]>(`/chat/conversations/${initialConversationId}/messages`)
       .then((history) => {
         setMessages(
-          history.map((m) => ({ role: m.role, content: m.content, citations: [] })),
+          history.map((m) => ({ id: m.id, role: m.role, content: m.content, citations: [] })),
         );
       })
       .catch(() => setError('Failed to load conversation history'));
@@ -39,12 +43,12 @@ export function useChatStream(initialConversationId?: string) {
     setIsStreaming(true);
 
     // Add user message immediately
-    setMessages((prev) => [...prev, { role: 'user', content: question }]);
+    setMessages((prev) => [...prev, { id: nextMsgId(), role: 'user', content: question }]);
 
     // Add placeholder for streaming assistant message
     setMessages((prev) => [
       ...prev,
-      { role: 'assistant', content: '', citations: [], isStreaming: true },
+      { id: nextMsgId(), role: 'assistant', content: '', citations: [], isStreaming: true },
     ]);
 
     const controller = new AbortController();
@@ -79,6 +83,7 @@ export function useChatStream(initialConversationId?: string) {
             const meta = JSON.parse(data);
             if (meta.conversationId) {
               conversationIdRef.current = meta.conversationId;
+              onNewConversation?.();
             }
           } catch {
             // ignore parse error
@@ -148,7 +153,7 @@ export function useChatStream(initialConversationId?: string) {
     } finally {
       setIsStreaming(false);
     }
-  }, [isStreaming]);
+  }, [isStreaming, onNewConversation]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();

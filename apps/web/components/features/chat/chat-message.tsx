@@ -48,9 +48,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
             {showCitations && (
               <div className="mt-2 space-y-2">
-                {message.citations!.map((citation, i) => (
+                {message.citations!.map((citation) => (
                   <div
-                    key={i}
+                    key={citation.chunkId}
                     className="rounded-md border border-gray-200 bg-gray-50 p-3 text-xs"
                   >
                     <p className="font-medium text-gray-700">{citation.documentTitle}</p>

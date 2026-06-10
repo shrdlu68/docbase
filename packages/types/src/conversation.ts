@@ -14,6 +14,7 @@ export interface Message {
 }
 
 export interface Citation {
+  chunkId: string;
   documentId: string;
   documentTitle: string;
   chunkContent: string;

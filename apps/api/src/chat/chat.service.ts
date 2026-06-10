@@ -77,6 +77,7 @@ export class ChatService {
 
       // 6. Emit sources so the client can show citations immediately
       const citations: Citation[] = chunks.map((chunk: RetrievedChunk) => ({
+        chunkId: chunk.id,
         documentId: chunk.document_id,
         documentTitle: chunk.document_title,
         chunkContent: chunk.content,

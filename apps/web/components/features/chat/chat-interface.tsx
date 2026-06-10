@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatStream } from '@/lib/hooks/use-chat-stream';
 import { ChatMessage } from './chat-message';
@@ -9,24 +9,20 @@ import { ConversationList } from './conversation-list';
 
 export function ChatInterface() {
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
-  const { messages, isStreaming, error, sendMessage, reset, conversationIdRef } =
-    useChatStream(activeConversationId);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  // Refresh conversation list when a new conversation is created by the server
+  const handleNewConversation = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['conversations'] });
+  }, [queryClient]);
+
+  const { messages, isStreaming, error, sendMessage, reset, conversationIdRef } =
+    useChatStream(activeConversationId, handleNewConversation);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Refresh conversation list after the first reply in a new chat
-  const prevConvId = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    const id = conversationIdRef.current;
-    if (id && id !== prevConvId.current) {
-      prevConvId.current = id;
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    }
-  });
 
   function handleNew() {
     reset();
@@ -65,8 +61,8 @@ export function ChatInterface() {
             </div>
           ) : (
             <div className="space-y-6">
-              {messages.map((msg, i) => (
-                <ChatMessage key={i} message={msg} />
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} message={msg} />
               ))}
               <div ref={bottomRef} />
             </div>
