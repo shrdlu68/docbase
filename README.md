@@ -31,19 +31,17 @@ A full-stack RAG (Retrieval-Augmented Generation) application. Users store docum
 **Prerequisites**: Node 20, [Supabase CLI](https://supabase.com/docs/guides/cli)
 
 ```bash
-# 1. Clone and install
+# 1. Clone
 git clone <repo-url> && cd docbase
-npm install
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env — fill in AI_API_KEY at minimum; Supabase values come from step 3
+# 2. Bootstrap (installs deps, starts Supabase, applies all migrations)
+make setup
 
-# 3. Start Supabase locally and apply migrations
-supabase start        # prints API URL, anon key, service_role key, JWT secret
-supabase db reset     # applies all 8 migrations
-
-# Paste the printed values into .env, then:
+# 3. Configure environment
+#    make setup created .env from .env.example — fill in your AI_API_KEY,
+#    then paste the Supabase keys printed by 'supabase start' above.
+#    (anon key, service_role key, JWT secret)
+$EDITOR .env
 
 # 4. Start both services
 make dev
@@ -71,7 +69,6 @@ AI_MODEL=llama3-70b-8192
 AI_BASE_URL=http://localhost:11434/v1
 AI_API_KEY=ollama
 AI_MODEL=llama3
-# ⚠ nomic-embed-text is 768-dim — requires a schema migration if used for embeddings
 
 # OpenRouter — access Anthropic/Google/Meta via one key
 AI_BASE_URL=https://openrouter.ai/api/v1
@@ -79,7 +76,15 @@ AI_API_KEY=sk-or-...
 AI_MODEL=anthropic/claude-3-haiku
 ```
 
-The default config uses `gpt-4o-mini` for chat and `text-embedding-ada-002` (1536-dim) for embeddings. The embedding model must match the `vector(1536)` column; changing it requires a migration.
+The default config uses `gpt-4o-mini` for chat and `text-embedding-ada-002` for embeddings. The DB uses a dimensionless `vector` column — any embedding model works without a schema migration.
+
+For one-command switching between OpenAI and a local Ollama instance:
+
+```bash
+make use-ollama   # patches .env for llama3.2 + nomic-embed-text, saves OpenAI key
+make use-openai   # restores .env to gpt-4o-mini + ada-002
+# then restart the API and re-index documents
+```
 
 ---
 
@@ -147,7 +152,7 @@ packages/
   types/        Shared TypeScript interfaces
   config/       Shared tsconfig and ESLint bases
 supabase/
-  migrations/   8 ordered SQL migrations (pgvector, tables, RLS, vector index, functions)
+  migrations/   9 ordered SQL migrations (pgvector, tables, RLS, functions, dimensionless vector)
 docs/
   ARCH.md       Architecture decisions with justifications
   GUIDE.md      Setup, API reference, test map, Docker, adding features
