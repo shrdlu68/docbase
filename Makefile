@@ -9,7 +9,7 @@ setup:
 
 # Start all services in development mode
 dev:
-	npx turbo run dev
+	set -a && . ./.env && set +a && npx turbo run dev
 
 # Run all tests (unit + integration + E2E)
 test:

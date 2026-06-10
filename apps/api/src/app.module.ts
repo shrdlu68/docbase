@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['../../.env', '.env'],
       validationSchema: Joi.object({
         SUPABASE_URL: Joi.string().uri().required(),
         SUPABASE_ANON_KEY: Joi.string().required(),
