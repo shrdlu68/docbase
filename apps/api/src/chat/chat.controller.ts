@@ -12,7 +12,7 @@ import { Observable } from 'rxjs';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetUser } from '../auth/get-user.decorator';
-import { AuthUser } from '../auth/jwt.strategy';
+import { AuthUser } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
 import { ChatStreamDto } from './dto/chat-stream.dto';
 

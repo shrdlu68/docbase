@@ -5,7 +5,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { AiService } from '../ai/ai.service';
 import { RagService } from '../rag/rag.service';
 import { ChatStreamDto } from './dto/chat-stream.dto';
-import { AuthUser } from '../auth/jwt.strategy';
+import { AuthUser } from '../auth/jwt-auth.guard';
 import { Citation, RetrievedChunk } from '@docbase/types';
 
 /** Number of prior messages to include as conversation history. */

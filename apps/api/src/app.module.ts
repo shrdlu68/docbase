@@ -18,8 +18,6 @@ import { HealthModule } from './health/health.module';
         SUPABASE_URL: Joi.string().uri().required(),
         SUPABASE_ANON_KEY: Joi.string().required(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
-        SUPABASE_JWT_SECRET: Joi.string().required(),
-        SUPABASE_JWT_PUBLIC_KEY: Joi.string().optional(),
         AI_BASE_URL: Joi.string().uri().default('https://api.openai.com/v1'),
         AI_API_KEY: Joi.string().required(),
         AI_MODEL: Joi.string().default('gpt-4o-mini'),
