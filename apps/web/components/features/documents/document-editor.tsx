@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { documentsApi, estimateChunkCount } from '@/lib/api/documents';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ interface DocumentEditorProps {
 
 export function DocumentEditor({ document }: DocumentEditorProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const formRef = useRef<HTMLFormElement>(null);
   const isEditing = !!document;
 
   const [title, setTitle] = useState(document?.title ?? '');
@@ -30,6 +32,7 @@ export function DocumentEditor({ document }: DocumentEditorProps) {
       return documentsApi.create({ title, content, tags });
     },
     onSuccess: (saved) => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
       router.push(`/documents/${saved.id}`);
       router.refresh();
     },
@@ -38,13 +41,7 @@ export function DocumentEditor({ document }: DocumentEditorProps) {
   const chunkCount = estimateChunkCount(content);
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        mutation.mutate();
-      }}
-      className="space-y-6"
-    >
+    <form ref={formRef} className="space-y-6">
       <Input
         id="title"
         label="Title"
@@ -90,7 +87,13 @@ export function DocumentEditor({ document }: DocumentEditorProps) {
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" loading={mutation.isPending}>
+        <Button
+          type="button"
+          loading={mutation.isPending}
+          onClick={() => {
+            if (formRef.current?.reportValidity()) mutation.mutate();
+          }}
+        >
           {isEditing ? 'Save changes' : 'Create document'}
         </Button>
         <Button

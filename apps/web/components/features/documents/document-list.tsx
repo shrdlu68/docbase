@@ -15,6 +15,7 @@ interface DocumentListProps {
 export function DocumentList({ initialDocuments }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => documentsApi.delete(id),
@@ -25,6 +26,10 @@ export function DocumentList({ initialDocuments }: DocumentListProps) {
     onError: (_err, _id, _context) => {
       // Revert on error
       setDocuments(initialDocuments);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      router.refresh();
     },
   });
 

@@ -66,8 +66,7 @@ export function useChatStream(initialConversationId?: string, onNewConversation?
         throw new Error(`HTTP ${response.status}: ${await response.text()}`);
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      if (!response.body) throw new Error('No response body');
 
       const decoder = new TextDecoder();
       let accumulatedContent = '';
@@ -129,10 +128,8 @@ export function useChatStream(initialConversationId?: string, onNewConversation?
         }
       });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        parser.feed(decoder.decode(value, { stream: true }));
+      for await (const chunk of response.body) {
+        parser.feed(decoder.decode(chunk, { stream: true }));
       }
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;

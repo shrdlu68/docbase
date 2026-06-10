@@ -1,26 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 type Mode = 'login' | 'register';
 
+type State = {
+  mode: Mode;
+  email: string;
+  password: string;
+  error: string | null;
+  loading: boolean;
+  message: string | null;
+};
+
+type Action =
+  | { type: 'SET_MODE'; mode: Mode }
+  | { type: 'SET_EMAIL'; email: string }
+  | { type: 'SET_PASSWORD'; password: string }
+  | { type: 'SUBMIT' }
+  | { type: 'SUCCESS'; message?: string }
+  | { type: 'ERROR'; error: string };
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SET_MODE':
+      return { ...state, mode: action.mode, error: null, message: null };
+    case 'SET_EMAIL':
+      return { ...state, email: action.email };
+    case 'SET_PASSWORD':
+      return { ...state, password: action.password };
+    case 'SUBMIT':
+      return { ...state, loading: true, error: null, message: null };
+    case 'SUCCESS':
+      return { ...state, loading: false, message: action.message ?? null };
+    case 'ERROR':
+      return { ...state, loading: false, error: action.error };
+  }
+}
+
+const initialState: State = {
+  mode: 'login',
+  email: '',
+  password: '',
+  error: null,
+  loading: false,
+  message: null,
+};
+
 export function AuthForm() {
-  const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { mode, email, password, error, loading, message } = state;
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setMessage(null);
+    dispatch({ type: 'SUBMIT' });
 
     try {
       if (mode === 'login') {
@@ -33,13 +70,11 @@ export function AuthForm() {
         if (data.session) {
           window.location.assign('/documents');
         } else {
-          setMessage('Check your email to confirm your account.');
+          dispatch({ type: 'SUCCESS', message: 'Check your email to confirm your account.' });
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'ERROR', error: err instanceof Error ? err.message : 'An error occurred' });
     }
   }
 
@@ -62,7 +97,7 @@ export function AuthForm() {
           autoComplete="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => dispatch({ type: 'SET_EMAIL', email: e.target.value })}
           placeholder="you@example.com"
         />
         <Input
@@ -73,7 +108,7 @@ export function AuthForm() {
           required
           minLength={6}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => dispatch({ type: 'SET_PASSWORD', password: e.target.value })}
           placeholder="••••••••"
         />
       </div>
@@ -100,7 +135,7 @@ export function AuthForm() {
             No account?{' '}
             <button
               type="button"
-              onClick={() => setMode('register')}
+              onClick={() => dispatch({ type: 'SET_MODE', mode: 'register' })}
               className="font-medium text-teal-600 hover:underline"
             >
               Sign up free
@@ -111,7 +146,7 @@ export function AuthForm() {
             Already have an account?{' '}
             <button
               type="button"
-              onClick={() => setMode('login')}
+              onClick={() => dispatch({ type: 'SET_MODE', mode: 'login' })}
               className="font-medium text-teal-600 hover:underline"
             >
               Sign in
