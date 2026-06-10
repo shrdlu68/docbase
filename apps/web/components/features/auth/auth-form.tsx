@@ -28,9 +28,13 @@ export function AuthForm() {
         if (error) throw error;
         window.location.assign('/documents');
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage('Check your email to confirm your account.');
+        if (data.session) {
+          window.location.assign('/documents');
+        } else {
+          setMessage('Check your email to confirm your account.');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
